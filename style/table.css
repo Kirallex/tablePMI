@@ -1,0 +1,262 @@
+/* ============================================================================
+   Table visual — flat-table CSS.
+   Deliberately independent from Matrix's visual.css:
+     • no sticky/absolute dimension cells,
+     • no per-column left/top positioning,
+     • table-layout: auto with max-content width so explicit column widths
+       (applyColumnWidthsFromSettings) are honoured and the container scrolls.
+   ========================================================================== */
+
+/* ---------- Root scroll container ---------- */
+.datagrid {
+    position: relative;
+    overflow: auto;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+    font-size: 12px;
+    color: #1E2323;
+}
+
+/* ---------- Table ---------- */
+.datagrid table {
+    border-collapse: separate;
+    border-spacing: 0;
+
+    /* auto layout respects inline width hints set by applyColumnWidthsFromSettings,
+       max-content lets the table grow wider than the container (horizontal scroll). */
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+}
+
+/* ---------- Header (sticky top) ---------- */
+.datagrid thead {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: #FFFFFF;
+}
+
+.datagrid thead tr.topRow {
+    background-color: #FFFFFF;
+}
+
+/* ---------- Base cell rules ---------- */
+.datagrid th,
+.datagrid td {
+    box-sizing: border-box;
+    vertical-align: middle;
+    padding: 5px 8px;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: none;
+    background-color: transparent;
+}
+
+/* Header cells */
+.datagrid thead th.rowsHeader,
+.datagrid thead th.formatColumnNodes {
+    font-weight: bold;
+    background-color: #FFFFFF;
+}
+
+/* Dimension cells in the body.
+   !important — hard reset of Matrix-era positioning, in case visual.css
+   somehow leaks into the bundle. Without this, several formatRowNodes in
+   one row would collapse into a single column (position:absolute; left:0). */
+.datagrid tbody th.formatRowNodes {
+    position: static !important;
+    display: table-cell !important;
+    float: none !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    inset: auto !important;
+    transform: none !important;
+
+    text-align: left;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Measure cells */
+.datagrid tbody td {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Total row */
+.datagrid tbody tr.totalRow th,
+.datagrid tbody tr.totalRow td {
+    font-weight: bold;
+    border-top: 2px solid #7DC3D2;
+}
+
+/* Inline text wrapper inside dimension cells */
+.datagrid .row-header-text {
+    display: inline;
+}
+
+/* Decorative border overlay — position is set inline by the formatter */
+.datagrid .thead-border {
+    pointer-events: none;
+}
+
+/* Make sure theme switches don't paint background on .midRow */
+.datagrid tbody tr.midRow,
+.datagrid tbody tr.totalRow {
+    background-color: #FFFFFF;
+}
+
+/* ============================================================================
+   Export button
+   ========================================================================== */
+
+.export-button-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background-color: #F3F3F3;
+    border-bottom: 1px solid #E1E1E1;
+}
+
+.export-monitor {
+    flex: 1;
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+    font-size: 11px;
+    color: #666666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.export-button {
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #FFFFFF;
+    background-color: #2A8FA5;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.export-button:hover:not(:disabled) {
+    background-color: #227A8C;
+}
+
+.export-button:focus-visible {
+    outline: 2px solid #1A6675;
+    outline-offset: 2px;
+}
+
+.export-button:disabled {
+    background-color: #B0B0B0;
+    cursor: default;
+}
+
+/* ============================================================================
+   Modal (excelDownloadModal.css уже подключается из downloadExcel.ts,
+   но эти правила — минимальный fallback на случай, если он не подгрузится)
+   ========================================================================== */
+
+.excel-download-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 99999;
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+}
+
+.excel-download-modal-content {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    padding: 20px 24px;
+    min-width: 420px;
+    max-width: 640px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.excel-download-modal-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #1E2323;
+}
+
+.excel-download-modal-instruction,
+.excel-download-modal-instruction-close,
+.excel-download-modal-count-rows {
+    margin: 6px 0;
+    font-size: 12px;
+    color: #444444;
+}
+
+.excel-download-modal-instruction-close {
+    color: #B00020;
+    font-weight: 600;
+}
+
+.excel-download-modal-link-container {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.excel-download-modal-link-input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #C8C8C8;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: Consolas, "Courier New", monospace;
+    color: #1E2323;
+}
+
+.excel-download-modal-copy-button,
+.excel-download-modal-close-button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.excel-download-modal-copy-button {
+    background-color: #2A8FA5;
+    color: #FFFFFF;
+}
+
+.excel-download-modal-copy-button.copied {
+    background-color: #2E7D32;
+}
+
+.excel-download-modal-copy-button.error {
+    background-color: #C62828;
+}
+
+.excel-download-modal-close-button {
+    display: block;
+    margin: 16px 0 0 auto;
+    background-color: #EAEAEA;
+    color: #1E2323;
+}
+
+.excel-download-modal-close-button:hover {
+    background-color: #D8D8D8;
+}

@@ -1,0 +1,26 @@
+{
+  "visual": {
+    "name": "tablePMI",
+    "displayName": "tablePMI",
+    "guid": "tablePMICE8615948B904D599E0632F326B276C5",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "test visual",
+    "supportUrl": "alex@email.com",
+    "gitHubUrl": "alex@email.com"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "Alex",
+    "email": "alex@email.com"
+  },
+  "assets": {
+    "icon": "assets/Picture1 2 small.png"
+  },
+  "externalJS": [],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": [],
+  "version": "1.0.0.0"
+}
