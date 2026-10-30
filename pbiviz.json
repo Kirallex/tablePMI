@@ -15,7 +15,7 @@
     "email": "alex@email.com"
   },
   "assets": {
-    "icon": "assets/Picture1 2 small.png"
+    "icon": "assets/icon.svg"
   },
   "externalJS": [],
   "style": "style/visual.less",

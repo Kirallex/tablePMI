@@ -32,6 +32,7 @@ export class TableDataviewHtmlFormatter {
         for (const dimIdx of dimIndices) {
             const th = document.createElement("th");
             th.classList.add("rowsHeader");
+            th.setAttribute("data-col-index", dimIdx.toString()); 
             th.textContent = columns[dimIdx].displayName || "";
             headerRow.appendChild(th);
         }
@@ -40,6 +41,7 @@ export class TableDataviewHtmlFormatter {
             const th = document.createElement("th");
             th.classList.add("formatColumnNodes");
             th.setAttribute("id", mIdx.toString());
+            th.setAttribute("data-col-index", measureIndices[mIdx].toString());
             th.textContent = col.displayName || "";
             headerRow.appendChild(th);
         }
@@ -120,6 +122,7 @@ export class TableDataviewHtmlFormatter {
 
             const th = document.createElement("th");
             th.classList.add("formatRowNodes");
+            th.setAttribute("data-col-index", dimIndices[d].toString());
             th.style.textAlign = "left";
 
             const span = document.createElement("span");
@@ -150,7 +153,8 @@ export class TableDataviewHtmlFormatter {
 
             const td = document.createElement("td");
             td.setAttribute("id", mIdx.toString());
-
+            td.setAttribute("data-col-index", measureIndices[mIdx].toString());
+            
             if (objects) {
                 (td as any).__cfObjects = objects;
                 td.dataset.hasCf = "1";

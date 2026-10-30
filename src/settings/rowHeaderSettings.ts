@@ -1,69 +1,107 @@
 import { VisualSettings } from "./settings";
 
+const ALT_ROW_PARITY = 1;
+
 export function applyRowHeadersSettings(container: HTMLElement, settings: VisualSettings): void {
-    const table = container.querySelector('table');
+    const table = container.querySelector("table") as HTMLTableElement | null;
     if (!table) return;
-    const rowHeaders = settings.rowHeaders?.rowHeadersGroup;
-    if (!rowHeaders) return;
 
-    const rowHeaderCells = table.querySelectorAll('tbody tr.midRow th.formatRowNodes, tbody tr.totalRow th.formatRowNodes');
-    if (rowHeaderCells.length === 0) return;
+    const rowHeadersGroup = settings.rowHeaders?.rowHeadersGroup as any;
+    if (!rowHeadersGroup) return;
 
-    // Шрифтовые настройки
-    const fontFamily = rowHeaders.font.fontFamily.value;
-    const fontSize = rowHeaders.font.fontSize.value;
-    const isBold = rowHeaders.font?.bold?.value;
-    const isItalic = rowHeaders.font?.italic?.value;
-    const isUnderline = rowHeaders.font?.underline?.value;
+    const textAlignment: string = rowHeadersGroup.textAlignment.value || "left";
+    const branded: boolean = !!rowHeadersGroup.brandedRowColor?.value;
 
-    rowHeaderCells.forEach(cell => {
-        const htmlCell = cell as HTMLElement;
-        htmlCell.style.setProperty('font-family', fontFamily, 'important');
-        htmlCell.style.setProperty('font-size', `${fontSize}px`, 'important');
-        htmlCell.style.setProperty('font-weight', isBold ? 'bold' : 'normal', 'important');
-        htmlCell.style.setProperty('font-style', isItalic ? 'italic' : 'normal', 'important');
-        htmlCell.style.setProperty('text-decoration', isUnderline ? 'underline' : 'none', 'important');
-    });
-
-    // Цвета
-    const branded = rowHeaders.brandedRowColor.value;
     if (branded) {
-        // Используем цвета из ValuesGroup с учётом чётности строк
-        const values = settings.values?.valuesGroup;
-        const rows = table.querySelectorAll('tbody tr');
-        const rowIndexMap = new Map<HTMLElement, number>();
-        rows.forEach((row, index) => {
-            rowIndexMap.set(row as HTMLElement, index);
-        });
-
-        rowHeaderCells.forEach(cell => {
-            const htmlCell = cell as HTMLElement;
-            const parentRow = cell.closest('tr') as HTMLElement;
-            const rowIndex = rowIndexMap.get(parentRow);
-            if (rowIndex !== undefined && values) {
-                const isOddRow = (rowIndex % 2 === 0);
-                const textColor = isOddRow ? values.textColor.value.value : values.altTextColor.value.value;
-                const bgColor = isOddRow ? values.backgroundColor.value.value : values.altBackgroundColor.value.value;
-                htmlCell.style.setProperty('color', textColor, 'important');
-                htmlCell.style.setProperty('background-color', bgColor, 'important');
-            }
-        });
+        applyBrandedFromValues(table, settings, textAlignment);
     } else {
-        const textColor = rowHeaders.textColor.value.value;
-        const bgColor = rowHeaders.backgroundColor.value.value;
-        rowHeaderCells.forEach(cell => {
-            const htmlCell = cell as HTMLElement;
-            htmlCell.style.setProperty('color', textColor, 'important');
-            htmlCell.style.setProperty('background-color', bgColor, 'important');
-        });
+        applyOwnRowHeadersStyle(table, rowHeadersGroup, textAlignment);
     }
+}
 
-    // Выравнивание текста
-    const alignment = rowHeaders.textAlignment.value;
-    rowHeaderCells.forEach(cell => {
-        const textSpan = cell.querySelector('.row-header-text') as HTMLElement;
-        if (textSpan) {
-            textSpan.style.setProperty('text-align', alignment, 'important');
-        }
+/* ============================================================
+ * Режим 1: собственные стили Row headers (branded = false)
+ * ============================================================ */
+
+function applyOwnRowHeadersStyle(
+    table: HTMLTableElement,
+    rowHeadersGroup: any,
+    textAlignment: string
+): void {
+    const fontFamily: string = rowHeadersGroup.font.fontFamily.value;
+    const fontSize: number = rowHeadersGroup.font.fontSize.value;
+    const isBold: boolean = !!rowHeadersGroup.font?.bold?.value;
+    const isItalic: boolean = !!rowHeadersGroup.font?.italic?.value;
+    const isUnderline: boolean = !!rowHeadersGroup.font?.underline?.value;
+
+    const textColor: string = rowHeadersGroup.textColor.value.value;
+    const bgColor: string = rowHeadersGroup.backgroundColor.value.value;
+
+    const apply = (cell: HTMLElement): void => {
+        cell.style.setProperty("font-family", fontFamily, "important");
+        cell.style.setProperty("font-size", `${fontSize}px`, "important");
+        cell.style.setProperty("font-weight", isBold ? "bold" : "normal", "important");
+        cell.style.setProperty("font-style", isItalic ? "italic" : "normal", "important");
+        cell.style.setProperty("text-decoration", isUnderline ? "underline" : "none", "important");
+        cell.style.setProperty("color", textColor, "important");
+        cell.style.setProperty("background-color", bgColor, "important");
+        cell.style.setProperty("text-align", textAlignment, "important");
+
+        const span = cell.querySelector(".row-header-text") as HTMLElement | null;
+        if (span) span.style.removeProperty("text-align");
+    };
+
+    table.querySelectorAll("tbody th.formatRowNodes").forEach(cell => {
+        apply(cell as HTMLElement);
+    });
+}
+
+/* ============================================================
+ * Режим 2: брендирование из Values (branded = true)
+ * ============================================================ */
+
+function applyBrandedFromValues(
+    table: HTMLTableElement,
+    settings: VisualSettings,
+    textAlignment: string
+): void {
+    const valuesGroup = (settings.values as any)?.valuesGroup;
+    if (!valuesGroup) return;
+
+    const fontFamily: string = valuesGroup.font.fontFamily.value;
+    const fontSize: number = valuesGroup.font.fontSize.value;
+    const isBold: boolean = !!valuesGroup.font?.bold?.value;
+    const isItalic: boolean = !!valuesGroup.font?.italic?.value;
+    const isUnderline: boolean = !!valuesGroup.font?.underline?.value;
+
+    const textColor: string = valuesGroup.textColor.value.value;
+    const bgColor: string = valuesGroup.backgroundColor.value.value;
+    // alt-цвета опциональны: если не заданы (пустая строка) — fallback на основные.
+    const altTextColor: string = valuesGroup.altTextColor?.value?.value || textColor;
+    const altBgColor: string = valuesGroup.altBackgroundColor?.value?.value || bgColor;
+
+    // totalRow не трогаем — им управляет applyRowGrandTotalSettings.
+    const bodyRows = table.querySelectorAll("tbody tr.midRow");
+    bodyRows.forEach((rowNode, rowIndex) => {
+        const row = rowNode as HTMLTableRowElement;
+        const isAlt = rowIndex % 2 === ALT_ROW_PARITY;
+        const color = isAlt ? altTextColor : textColor;
+        const bg = isAlt ? altBgColor : bgColor;
+
+        const headerCells = row.querySelectorAll("th.formatRowNodes");
+        headerCells.forEach(cellNode => {
+            const cell = cellNode as HTMLElement;
+            cell.style.setProperty("font-family", fontFamily, "important");
+            cell.style.setProperty("font-size", `${fontSize}px`, "important");
+            cell.style.setProperty("font-weight", isBold ? "bold" : "normal", "important");
+            cell.style.setProperty("font-style", isItalic ? "italic" : "normal", "important");
+            cell.style.setProperty("text-decoration", isUnderline ? "underline" : "none", "important");
+            cell.style.setProperty("color", color, "important");
+            cell.style.setProperty("background-color", bg, "important");
+            cell.style.setProperty("text-align", textAlignment, "important");
+
+            const span = cell.querySelector(".row-header-text") as HTMLElement | null;
+            if (span) span.style.removeProperty("text-align");
+        });
     });
 }

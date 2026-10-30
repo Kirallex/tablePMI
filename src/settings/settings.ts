@@ -330,20 +330,25 @@ class SpecificColumnCard extends FormattingSettingsCompositeCard {
     public groups: formattingSettings.Cards[];
     public name = "specificColumn";
     public displayName = "Specific column";
+
     constructor() {
         super();
         const groups: MeasureCard[] = [];
-        for (let i = 0; i < 30; i++) {
-            groups.push(new MeasureCard(`measure_${i}`, `Measure ${i + 1}`));
+        for (let i = 0; i < 60; i++) {
+            groups.push(new MeasureCard(`column_${i}`, `Column ${i + 1}`));
         }
         this.groups = groups;
     }
-    public updateGroups(measureNames: string[]): void {
+
+    public updateColumns(columnNames: string[]): void {
         const groups = this.groups as MeasureCard[];
-        for (let i = 0; i < groups.length; i++) groups[i].visible = false;
-        for (let i = 0; i < measureNames.length && i < groups.length; i++) {
-            groups[i].visible = true;
-            groups[i].displayName = measureNames[i];
+        for (let i = 0; i < groups.length; i++) {
+            if (i < columnNames.length) {
+                groups[i].visible = true;
+                groups[i].displayName = columnNames[i] || `Column ${i + 1}`;
+            } else {
+                groups[i].visible = false;
+            }
         }
     }
 }
@@ -354,47 +359,46 @@ export class ColumnWidthCard extends FormattingSettingsCard {
     public displayName = "Column Width";
     public slices: formattingSettings.Slice[] = [];
 
-    private rowHeaderWidth: formattingSettings.NumUpDown;
-    private measureWidths: formattingSettings.NumUpDown[] = [];
+    private columnWidths: formattingSettings.NumUpDown[] = [];
 
     constructor() {
         super();
-        this.rowHeaderWidth = new formattingSettings.NumUpDown({
-            name: "rowHeader_width",
-            displayName: "Row header width",
-            value: 300,
-            options: { minValue: 50, maxValue: 500, step: 5 } as any
-        });
-        this.slices.push(this.rowHeaderWidth);
 
-        for (let i = 0; i < 30; i++) {
+        // 60 колонок с запасом: хватает на типичную таблицу «пара разрезов + меры».
+        // Если у вас бывают шире — увеличьте константу и массив в capabilities.json.
+        for (let i = 0; i < 60; i++) {
             const widthSlice = new formattingSettings.NumUpDown({
-                name: `measure_${i}_width`,
-                displayName: `Measure ${i + 1} width`,
+                name: `column_${i}_width`,
+                displayName: `Column ${i + 1} width`,
                 value: 120,
                 options: { minValue: 50, maxValue: 500, step: 5 } as any
             });
-            this.measureWidths.push(widthSlice);
+            this.columnWidths.push(widthSlice);
             this.slices.push(widthSlice);
         }
     }
 
-    public updateMeasureWidths(measureNames: string[]): void {
-        for (let i = 0; i < this.measureWidths.length; i++) {
-            if (i < measureNames.length) {
-                this.measureWidths[i].displayName = `${measureNames[i]} width`;
-                this.measureWidths[i].visible = true;
+    /**
+     * Показывает первые N NumUpDown (по числу колонок), переименовывает их
+     * в имена колонок и скрывает остальные.
+     */
+    public updateColumns(columnNames: string[]): void {
+        for (let i = 0; i < this.columnWidths.length; i++) {
+            if (i < columnNames.length) {
+                this.columnWidths[i].displayName = columnNames[i] || `Column ${i + 1}`;
+                this.columnWidths[i].visible = true;
             } else {
-                this.measureWidths[i].visible = false;
+                this.columnWidths[i].visible = false;
             }
         }
-        this.slices = [this.rowHeaderWidth, ...this.measureWidths];
     }
 
-    public getRowHeaderWidth(): number { return this.rowHeaderWidth.value; }
+    public getColumnWidth(i: number): number {
+        return i < this.columnWidths.length ? this.columnWidths[i].value : 120;
+    }
 
-    public getMeasureWidth(i: number): number {
-        return i < this.measureWidths.length ? this.measureWidths[i].value : 120;
+    public getColumnCount(): number {
+        return this.columnWidths.length;
     }
 }
 
@@ -603,7 +607,7 @@ export class VisualSettings extends FormattingSettingsModel {
             this.rowGrandTotal,
             this.specificColumn,
             this.columnWidth,
-            this.borders,
+           // this.borders,
             this.conditionalFormatting
         ];
     }

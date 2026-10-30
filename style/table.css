@@ -87,6 +87,15 @@
     text-overflow: ellipsis;
 }
 
+.datagrid tbody tr.totalRow > th,
+.datagrid tbody tr.totalRow > td,
+.datagrid tbody tr.totalRow > th.formatRowNodes {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 2;
+    background-color: #FFFFFF;
+}
+
 /* Measure cells */
 .datagrid tbody td {
     text-align: right;

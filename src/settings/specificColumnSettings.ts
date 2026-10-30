@@ -1,92 +1,63 @@
-// specificColumnSettings.ts
-import { IMeasureSettings } from "./measureSettings";
+import { IMeasureSettings, IColumnPartSettings } from "./measureSettings";
 
+/**
+ * Применяет настройки «Specific column» к одной колонке.
+ *
+ * Ищет ячейки по data-col-index (ставится formatter'ом на каждый th/td)
+ * и раскладывает стили по трём зонам:
+ *   • header — <thead> (любые th/td этой колонки),
+ *   • values — <tbody tr.midRow> (строки данных),
+ *   • total  — <tbody tr.totalRow> (строка итогов).
+ *
+ * Пустые значения ("" — «не задано») не применяются: иначе слот с
+ * дефолтными ""-ями затирал бы стили из Values / Row Headers / Row Grand
+ * Total для тех колонок, где пользователь ничего не настраивал.
+ *
+ * !important нужен, чтобы перебить applyValuesSettings / applyRowHeadersSettings /
+ * applyRowGrandTotalSettings — Specific column применяется после них и должен
+ * иметь приоритет.
+ */
 export function applySpecificColumnSettings(
-    container: HTMLElement,
+    grid: HTMLElement,
     settings: IMeasureSettings,
-    measureKey: string,
-    measureName: string
+    columnIndex: number
 ): void {
-    // console.log(`[applySpecificColumnSettings] Called for measure: "${measureName}"`);
-    // console.log("Settings:", JSON.stringify(settings, null, 2));
+    if (!grid || columnIndex < 0) return;
 
-    const table = container.querySelector('table');
-    if (!table) {
-        console.warn("Table not found in container");
-        return;
-    }
+    const selector = `[data-col-index="${columnIndex}"]`;
 
-   //const headerRow = table.querySelector('thead tr:last-child');
-    const headerRows = table.querySelectorAll('thead tr');
-    const headerRow = headerRows.length ? headerRows[headerRows.length - 1] : null;
-    if (!headerRow) {
-        console.warn("Header row (thead tr:last-child) not found");
-        return;
-    }
-
-    // Все ячейки заголовков, исключая первый столбец (строки)
-    const headerCells = Array.from(headerRow.querySelectorAll('th')).slice(1);
-    // console.log(`Header cells count: ${headerCells.length}`);
-    headerCells.forEach((cell, idx) => {
-        // console.log(`  cell ${idx} text: "${cell.textContent?.trim()}"`);
+    // Header (thead, любые ячейки)
+    grid.querySelectorAll(`thead ${selector}`).forEach(cell => {
+        applyPart(cell as HTMLElement, settings.header);
     });
 
-    const columnIndices: number[] = [];
-    headerCells.forEach((cell, idx) => {
-        const cellText = cell.textContent?.trim() || '';
-        if (cellText === measureName) {
-            columnIndices.push(idx + 1); // +1 из-за пропущенного первого столбца
-            // console.log(`  -> Match at index ${idx} (real column ${idx + 1})`);
-        }
+    // Values (только строки данных)
+    grid.querySelectorAll(`tbody tr.midRow ${selector}`).forEach(cell => {
+        applyPart(cell as HTMLElement, settings.values);
     });
 
-    if (columnIndices.length === 0) {
-        console.warn(`No columns found for measure "${measureName}"`);
-        return;
+    // Total (только строка итогов)
+    grid.querySelectorAll(`tbody tr.totalRow ${selector}`).forEach(cell => {
+        applyPart(cell as HTMLElement, settings.total);
+    });
+}
+
+function applyPart(cell: HTMLElement, part: IColumnPartSettings): void {
+    if (!part) return;
+
+    // Пустая строка = «не задано» у ColorPicker/AlignmentGroup. Не трогаем.
+    if (part.textColor) {
+        cell.style.setProperty("color", part.textColor, "important");
     }
+    if (part.backgroundColor) {
+        cell.style.setProperty("background-color", part.backgroundColor, "important");
+    }
+    if (part.alignment) {
+        // text-align — на <th>/<td> (table-cell, block-контейнер),
+        // не на внутренний inline-<span> (см. фикс Row headers).
+        cell.style.setProperty("text-align", part.alignment, "important");
 
-    // console.log(`Applying styles to columns: ${columnIndices.join(', ')}`);
-
-    const applyStyles = (cell: HTMLElement, part: { textColor: string; backgroundColor: string; alignment: string }, partName: string) => {
-    const currentStyle = cell.getAttribute('style') || '';
-    const newStyle = `${currentStyle}; color: ${part.textColor} !important; background-color: ${part.backgroundColor} !important; text-align: ${part.alignment} !important;`;
-    cell.setAttribute('style', newStyle);
-    // console.log(`  ${partName} style attribute updated to:`, newStyle);
-    };
-
-    columnIndices.forEach(colIndex => {
-        // 1. Заголовок (Header)
-        if (settings.header) {
-            const headerCell = headerRow.children[colIndex] as HTMLElement;
-            if (headerCell) {
-                applyStyles(headerCell, settings.header, "Header");
-            } else {
-                console.warn(`Header cell at colIndex ${colIndex} not found`);
-            }
-        }
-
-        // 2. Значения (Values) – строки с классом midRow
-        if (settings.values) {
-            const dataRows = table.querySelectorAll('tbody tr.midRow');
-            // console.log(`  Found ${dataRows.length} midRow rows for Values`);
-            dataRows.forEach((row, rowIdx) => {
-                const cell = (row as HTMLTableRowElement).cells[colIndex];
-                if (cell) {
-                    applyStyles(cell as HTMLElement, settings.values, `Values (row ${rowIdx})`);
-                }
-            });
-        }
-
-        // 3. Итоги (Total) – строки с классом totalRow
-        if (settings.total) {
-            const totalRows = table.querySelectorAll('tbody tr.totalRow');
-            // console.log(`  Found ${totalRows.length} totalRow rows for Total`);
-            totalRows.forEach((row, rowIdx) => {
-                const cell = (row as HTMLTableRowElement).cells[colIndex];
-                if (cell) {
-                    applyStyles(cell as HTMLElement, settings.total, `Total (row ${rowIdx})`);
-                }
-            });
-        }
-    });
+        const span = cell.querySelector(".row-header-text") as HTMLElement | null;
+        if (span) span.style.removeProperty("text-align");
+    }
 }

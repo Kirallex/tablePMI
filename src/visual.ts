@@ -197,8 +197,15 @@ export class Visual implements IVisual {
     }
 
     private updateGroups(): void {
-        (this.settings.specificColumn as any).updateGroups(this.measureNames);
-        (this.settings.columnWidth as ColumnWidthCard).updateMeasureWidths(this.measureNames);
+        const columns = this.currentDataView?.table?.columns || [];
+        const columnNames = columns.map(c => c.displayName || "");
+
+        (this.settings.specificColumn as any).updateColumns(columnNames);
+
+        // Если Column Width уже переведён на updateColumns — оставьте это;
+        // если нет — замените строку на старый updateMeasureWidths(this.measureNames).
+        (this.settings.columnWidth as ColumnWidthCard).updateColumns(columnNames);
+
         this.settings.conditionalFormatting.updateGroups(this.measureInfos);
     }
 
@@ -275,9 +282,8 @@ export class Visual implements IVisual {
         const tableEl = formatted.querySelector("table");
         if (tableEl) {
             applyColumnWidthsFromSettings(
-                tableEl,
-                this.settings.columnWidth as ColumnWidthCard,
-                this.measureNames
+                tableEl as HTMLTableElement,
+                this.settings.columnWidth as ColumnWidthCard
             );
         }
 
@@ -437,11 +443,11 @@ export class Visual implements IVisual {
         if (!grid) return;
 
         const groups = this.settings.specificColumn.groups as MeasureCard[];
+
         for (let i = 0; i < groups.length; i++) {
             const card = groups[i];
             if ((card as any).visible === false) continue;
 
-            const measureName = String(card.displayName);
             const settings: IMeasureSettings = {
                 header: {
                     textColor: card.headerTextColor.value.value,
@@ -459,8 +465,7 @@ export class Visual implements IVisual {
                     alignment: card.valuesAlignment.value
                 }
             };
-            const measureKey = `measure_${i}`;
-            applySpecificColumnSettings(grid as HTMLElement, settings, measureKey, measureName);
+            applySpecificColumnSettings(grid as HTMLElement, settings, i);
         }
     }
 
